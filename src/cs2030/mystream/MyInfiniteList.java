@@ -1,14 +1,15 @@
 package cs2030.mystream;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.*;
 
 public class MyInfiniteList<T> implements InfiniteList<T>{
-    private T head;
+    private Supplier<T> head;
     private Supplier<InfiniteList<T>> tail;
     private boolean isEmpty = false;
 
-    MyInfiniteList(T head, Supplier<InfiniteList<T>> tail) {
+    MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail) {
         this.head = head;
         this.tail = tail;
     }
@@ -17,6 +18,10 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         isEmpty = true;
     }
 
+    private static <T> MyInfiniteList<T> empty() {
+        return new MyInfiniteList<>();
+    }
+    
     @Override
     public boolean isEmpty() {
         return isEmpty;
@@ -24,8 +29,14 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public T getHead() {
-        return head;
+        return head.get();
     }
+
+    @Override
+    public InfiniteList<T> getTail() {
+        return tail.get();
+    }
+
     @Override
     public long count() {
         return isEmpty() ? 0 : 1 + tail.get().count();
@@ -36,7 +47,7 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         if (isEmpty()) {
             return;
         }
-        action.accept(head);
+        action.accept(getHead());
         tail.get().forEach(action);
     }
 
@@ -45,51 +56,72 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         if (isEmpty()) {
             return Optional.empty();
         }
-        T acc = head;
-        InfiniteList<T> curr = tail.get();
+        T acc = getHead();
+        InfiniteList<T> curr = getTail();
         if (curr.isEmpty()) {
             return Optional.empty();
         }
-        while (curr != null) {
+        while (!curr.isEmpty()) {
             acc = accumulator.apply(acc, curr.getHead());
-            curr = tail.get();
+            curr = curr.getTail();
         }
         return Optional.of(acc);
     }
 
     @Override
     public T reduce(T identity, BinaryOperator<T> accumulator) {
-        return null;
+        T acc = identity;
+        InfiniteList<T> curr = this;
+        while (!curr.isEmpty()) {
+            acc = accumulator.apply(acc, curr.getHead());
+            curr = curr.getTail();
+        }
+        return acc;
     }
 
     @Override
     public Object[] toArray() {
-        return new Object[0];
+        ArrayList<T> list = new ArrayList<>();
+        forEach(list::add);
+        return list.toArray();
     }
 
     @Override
     public InfiniteList<T> limit(long maxSize) {
-        if (maxSize <= 0 || isEmpty) {
-            return new MyInfiniteList<>();
+        if (maxSize <= 0 || isEmpty()) {
+            return MyInfiniteList.empty();
         }
-        return new MyInfiniteList<>(head, () -> tail.get().limit(maxSize - 1));
+        return new MyInfiniteList<>(this::getHead, () -> tail.get().limit(maxSize - 1));
     }
 
     @Override
     public InfiniteList<T> filter(Predicate<? super T> predicate) {
-        return null;
+        if (isEmpty()) {
+            return MyInfiniteList.empty();
+        }
+        if (predicate.test(getHead())) {
+            return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
+        }
+        InfiniteList<T> next = getTail();
+        if (next.isEmpty()) {
+            return MyInfiniteList.empty();
+        }
+        return new MyInfiniteList<>(next::getHead, () -> next.getTail().filter(predicate));
     }
 
     @Override
     public <R> InfiniteList<R> map(Function<? super T, ? extends R> mapper) {
-        return null;
+        if (isEmpty()) {
+            return MyInfiniteList.empty();
+        }
+        return new MyInfiniteList<>(() -> mapper.apply(getHead()), () -> getTail().map(mapper));
     }
 
     @Override
     public InfiniteList<T> takeWhile(Predicate<? super T> predicate) {
-        if (isEmpty() || !predicate.test(head)) {
-            return new MyInfiniteList<>();
+        if (isEmpty() || !predicate.test(getHead())) {
+            return MyInfiniteList.empty();
         }
-        return new MyInfiniteList<>(head, () -> tail.get().takeWhile(predicate));
+        return new MyInfiniteList<>(this::getHead, () -> getTail().takeWhile(predicate));
     }
 }

@@ -5,16 +5,17 @@ import java.util.function.*;
 
 public interface InfiniteList<T> {
     static <T> InfiniteList<T> generate(Supplier<? extends T> supplier) {
-        return new MyInfiniteList<>(supplier.get(), () -> InfiniteList.generate(supplier));
+        return new MyInfiniteList<>(supplier::get, () -> InfiniteList.generate(supplier));
     }
 
     static <T> InfiniteList<T> iterate(T seed, UnaryOperator<T> next) {
-        return new MyInfiniteList<>(seed, () -> InfiniteList.iterate(next.apply(seed), next));
+        return new MyInfiniteList<>(() -> seed, () -> InfiniteList.iterate(next.apply(seed), next));
     }
-
     boolean isEmpty();
 
     T getHead();
+
+    InfiniteList<T> getTail();
 
     long count();
 
