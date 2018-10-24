@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.function.*;
 
 public interface InfiniteList<T> {
+
     static <T> InfiniteList<T> generate(Supplier<? extends T> supplier) {
         return new MyInfiniteList<>(supplier::get, () -> InfiniteList.generate(supplier));
     }

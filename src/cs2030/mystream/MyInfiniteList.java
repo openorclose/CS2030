@@ -34,13 +34,18 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public boolean isEmpty() {
+        if (listProducer != null) {
+            listProducer.accept(this);
+        }
+        return head == null;
+        /*
         if (head == null) {
             return true;
         }
         if (predicate == null) {
             return false;
         }
-        return !predicate.test(getHead());
+        return !predicate.test(getHead());*/
     }
 
     @Override
@@ -132,16 +137,11 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         if (isEmpty()) {
             return MyInfiniteList.empty();
         }
-        return InfiniteList.generate(() -> {
 
-        });
-        /*
-        return new MyInfiniteList<>(() -> null, () -> {
-            if (predicate.test(getHead())) {
-                return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
-            }
-            return getTail().filter(predicate);
-        }).getTail();*/
+        if (predicate.test(getHead())) {
+            return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
+        }
+        return getTail().filter(predicate);
     }
 
     @Override
