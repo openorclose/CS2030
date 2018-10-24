@@ -5,9 +5,20 @@ import java.util.Optional;
 import java.util.function.*;
 
 public class MyInfiniteList<T> implements InfiniteList<T>{
-    private Supplier<T> head;
-    private Supplier<InfiniteList<T>> tail;
-    private boolean isEmpty = false;
+    private Supplier<T> head = null;
+    private Supplier<InfiniteList<T>> tail = null;
+    private Predicate<? super T> predicate = null;
+    private T forcedHead = null;
+    private boolean hasBeenForced = false;
+    private Consumer<MyInfiniteList<T>> listProducer = null;
+    private MyInfiniteList(Consumer<MyInfiniteList<T>> listProducer) {
+        this.listProducer = listProducer;
+    }
+
+    private MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail, Predicate<? super T> predicate) {
+        this(head, tail);
+        this.predicate = predicate;
+    }
 
     MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail) {
         this.head = head;
@@ -15,21 +26,30 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
     }
 
     private MyInfiniteList() {
-        isEmpty = true;
     }
 
     private static <T> MyInfiniteList<T> empty() {
         return new MyInfiniteList<>();
     }
-    
+
     @Override
     public boolean isEmpty() {
-        return isEmpty;
+        if (head == null) {
+            return true;
+        }
+        if (predicate == null) {
+            return false;
+        }
+        return !predicate.test(getHead());
     }
 
     @Override
     public T getHead() {
-        return head.get();
+        if (hasBeenForced) {
+            return forcedHead;
+        }
+        hasBeenForced = true;
+        return forcedHead = head.get();
     }
 
     @Override
@@ -91,7 +111,20 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         if (maxSize <= 0 || isEmpty()) {
             return MyInfiniteList.empty();
         }
-        return new MyInfiniteList<>(this::getHead, () -> tail.get().limit(maxSize - 1));
+        return new MyInfiniteList<>(
+                this::getHead,
+                maxSize == 1 ?
+                        MyInfiniteList::empty :
+                        () -> getTail().limit(maxSize - 1)
+        );
+    }
+
+    public void setHead(Supplier<T> head) {
+        this.head = head;
+    }
+
+    public void setTail(Supplier<InfiniteList<T>> tail) {
+        this.tail = tail;
     }
 
     @Override
@@ -99,14 +132,16 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         if (isEmpty()) {
             return MyInfiniteList.empty();
         }
-        if (predicate.test(getHead())) {
-            return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
-        }
-        InfiniteList<T> next = getTail();
-        if (next.isEmpty()) {
-            return MyInfiniteList.empty();
-        }
-        return new MyInfiniteList<>(next::getHead, () -> next.getTail().filter(predicate));
+        return InfiniteList.generate(() -> {
+
+        });
+        /*
+        return new MyInfiniteList<>(() -> null, () -> {
+            if (predicate.test(getHead())) {
+                return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
+            }
+            return getTail().filter(predicate);
+        }).getTail();*/
     }
 
     @Override
@@ -119,9 +154,9 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public InfiniteList<T> takeWhile(Predicate<? super T> predicate) {
-        if (isEmpty() || !predicate.test(getHead())) {
+        if (isEmpty()) {
             return MyInfiniteList.empty();
         }
-        return new MyInfiniteList<>(this::getHead, () -> getTail().takeWhile(predicate));
+        return new MyInfiniteList<>(this::getHead, () -> getTail().takeWhile(predicate), predicate);
     }
 }
