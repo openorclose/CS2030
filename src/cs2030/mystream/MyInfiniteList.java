@@ -8,12 +8,12 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
     private Supplier<InfiniteList<T>> tail;
     private boolean isEmpty = false;
 
-    public MyInfiniteList(T head, Supplier<InfiniteList<T>> tail) {
+    MyInfiniteList(T head, Supplier<InfiniteList<T>> tail) {
         this.head = head;
         this.tail = tail;
     }
 
-    public MyInfiniteList() {
+    private MyInfiniteList() {
         isEmpty = true;
     }
 
@@ -28,25 +28,26 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
     }
     @Override
     public long count() {
-        return isEmpty ? 0 : 1 + tail.get().count();
+        return isEmpty() ? 0 : 1 + tail.get().count();
     }
 
     @Override
     public void forEach(Consumer<? super T> action) {
-        action.accept(head);
-        if (tail != null) {
-            tail.get().forEach(action);
+        if (isEmpty()) {
+            return;
         }
+        action.accept(head);
+        tail.get().forEach(action);
     }
 
     @Override
     public Optional<T> reduce(BinaryOperator<T> accumulator) {
-        if (tail == null) {
+        if (isEmpty()) {
             return Optional.empty();
         }
         T acc = head;
         InfiniteList<T> curr = tail.get();
-        if (curr == null) {
+        if (curr.isEmpty()) {
             return Optional.empty();
         }
         while (curr != null) {
@@ -86,6 +87,9 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public InfiniteList<T> takeWhile(Predicate<? super T> predicate) {
-        return null;
+        if (isEmpty() || !predicate.test(head)) {
+            return new MyInfiniteList<>();
+        }
+        return new MyInfiniteList<>(head, () -> tail.get().takeWhile(predicate));
     }
 }
