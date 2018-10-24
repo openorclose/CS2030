@@ -3,15 +3,23 @@ package cs2030.mystream;
 import java.util.Optional;
 import java.util.function.*;
 
-import static java.util.Optional.of;
-
 public class MyInfiniteList<T> implements InfiniteList<T>{
     private T head;
     private Supplier<InfiniteList<T>> tail;
+    private boolean isEmpty = false;
 
     public MyInfiniteList(T head, Supplier<InfiniteList<T>> tail) {
         this.head = head;
         this.tail = tail;
+    }
+
+    public MyInfiniteList() {
+        isEmpty = true;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return isEmpty;
     }
 
     @Override
@@ -20,10 +28,7 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
     }
     @Override
     public long count() {
-        if (tail == null) {
-            return 1;
-        }
-        return 1 + tail.get().count();
+        return isEmpty ? 0 : 1 + tail.get().count();
     }
 
     @Override
@@ -63,7 +68,10 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public InfiniteList<T> limit(long maxSize) {
-        return null;
+        if (maxSize <= 0 || isEmpty) {
+            return new MyInfiniteList<>();
+        }
+        return new MyInfiniteList<>(head, () -> tail.get().limit(maxSize - 1));
     }
 
     @Override

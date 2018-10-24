@@ -12,6 +12,8 @@ public interface InfiniteList<T> {
         return new MyInfiniteList<>(seed, () -> InfiniteList.iterate(next.apply(seed), next));
     }
 
+    boolean isEmpty();
+
     T getHead();
 
     long count();
