@@ -10,18 +10,19 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
     private Predicate<? super T> predicate = null;
     private T forcedHead = null;
     private boolean hasBeenForced = false;
-    private Consumer<MyInfiniteList<T>> listProducer = null;
-    private MyInfiniteList(Consumer<MyInfiniteList<T>> listProducer) {
-        this.listProducer = listProducer;
-    }
+    private boolean continueAfterFirstPredicateFailure = false;
 
+    private MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail, Predicate<? super T> predicate, boolean filter) {
+        this(head, tail, predicate);
+        this.continueAfterFirstPredicateFailure = filter;
+    }
     private MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail, Predicate<? super T> predicate) {
         this(head, tail);
         this.predicate = predicate;
     }
 
     MyInfiniteList(Supplier<T> head, Supplier<InfiniteList<T>> tail) {
-        this.head = head;
+        this.head = new EvalOnceSupplier<>(head);
         this.tail = tail;
     }
 
@@ -34,27 +35,47 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public boolean isEmpty() {
-        if (listProducer != null) {
-            listProducer.accept(this);
-        }
-        return head == null;
+        return getHead() == null;
         /*
-        if (head == null) {
-            return true;
-        }
         if (predicate == null) {
             return false;
         }
-        return !predicate.test(getHead());*/
+        return !predicate.test(getHead());
+        if (continueAfterFirstPredicateFailure && !passed) {
+            return getTail().isEmpty();
+        }
+        return !passed;*/
+    }
+
+    public Supplier<T> getHeadSupplier() {
+        return head;
+    }
+
+    public Supplier<InfiniteList<T>> getTailSupplier() {
+        return tail;
     }
 
     @Override
     public T getHead() {
+        if (head == null) {
+            return null;
+        }
         if (hasBeenForced) {
             return forcedHead;
         }
         hasBeenForced = true;
-        return forcedHead = head.get();
+        forcedHead = head.get();
+        System.out.println(predicate == null);
+        if (predicate == null || predicate.test(forcedHead)) {
+            return forcedHead;
+        }
+        if (continueAfterFirstPredicateFailure) {
+            head = getTail().getHeadSupplier();
+            tail = getTail().getTailSupplier();
+            hasBeenForced = false;
+            return getHead();
+        }
+        return null;
     }
 
     @Override
@@ -113,7 +134,7 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
 
     @Override
     public InfiniteList<T> limit(long maxSize) {
-        if (maxSize <= 0 || isEmpty()) {
+        if (maxSize <= 0 || head == null) {
             return MyInfiniteList.empty();
         }
         return new MyInfiniteList<>(
@@ -124,37 +145,26 @@ public class MyInfiniteList<T> implements InfiniteList<T>{
         );
     }
 
-    public void setHead(Supplier<T> head) {
-        this.head = head;
-    }
-
-    public void setTail(Supplier<InfiniteList<T>> tail) {
-        this.tail = tail;
-    }
-
     @Override
     public InfiniteList<T> filter(Predicate<? super T> predicate) {
-        if (isEmpty()) {
+        if (head == null) {
             return MyInfiniteList.empty();
         }
-
-        if (predicate.test(getHead())) {
-            return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate));
-        }
-        return getTail().filter(predicate);
+        return new MyInfiniteList<>(this::getHead, () -> getTail().filter(predicate), predicate, true);
     }
 
     @Override
     public <R> InfiniteList<R> map(Function<? super T, ? extends R> mapper) {
-        if (isEmpty()) {
+        if (head == null) {
             return MyInfiniteList.empty();
         }
-        return new MyInfiniteList<>(() -> mapper.apply(getHead()), () -> getTail().map(mapper));
+
+        return new MyInfiniteList<>(() -> getHead() == null ? null : mapper.apply(getHead()), () -> getTail().map(mapper));
     }
 
     @Override
     public InfiniteList<T> takeWhile(Predicate<? super T> predicate) {
-        if (isEmpty()) {
+        if (head == null) {
             return MyInfiniteList.empty();
         }
         return new MyInfiniteList<>(this::getHead, () -> getTail().takeWhile(predicate), predicate);

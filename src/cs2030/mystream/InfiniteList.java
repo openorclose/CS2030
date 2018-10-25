@@ -18,6 +18,10 @@ public interface InfiniteList<T> {
 
     InfiniteList<T> getTail();
 
+    public Supplier<T> getHeadSupplier();
+
+    public Supplier<InfiniteList<T>> getTailSupplier();
+
     long count();
 
     void forEach(Consumer<? super T> action);

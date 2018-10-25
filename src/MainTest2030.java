@@ -129,6 +129,7 @@ class MainTest2030 {
         System.out.println(InfiniteListGrader.iterate(0, x -> x + 1).takeWhile(x -> x < 2).count());
         System.out.println(InfiniteListGrader.iterate(0, x -> x + 1).takeWhile(x -> x < 1).count());
         System.out.println(InfiniteListGrader.iterate(0, x -> x + 1).takeWhile(x -> x < 0).count());
+        //test 27
         System.out.println(Arrays.asList(InfiniteListGrader.iterate(0, x -> x + 1).map(x -> x).takeWhile(x -> x < 4).limit(1).toArray()));
         System.out.println(Arrays.asList(InfiniteListGrader.generate(new IncrementalGenerator<>(0, x -> x + 1)).map(x -> x).takeWhile(x -> x < 4).limit(1).toArray()));
         System.out.println(Arrays.asList(InfiniteListGrader.generate(new RandomGenerator(12345)).map(x -> x).takeWhile(x -> x < 4).limit(1).toArray()));
@@ -149,6 +150,7 @@ class MainTest2030 {
         InfiniteListGrader.generate(new IncrementalGenerator<>(0, x -> x + 1)).filter(x -> x % 5 == 0).filter(x -> x % 10 == 0).filter(x -> x % 100 == 0);
         InfiniteListGrader.generate(new IncrementalGenerator<>(0, x -> x + 1)).filter(x -> x % 5 == 0).filter(x -> x % 10 == 0).filter(x -> x % 100 == 0).limit(2);
         System.out.println(InfiniteListGrader.iterate(0, x -> x + 1).filter(x -> x < 10).limit(4).count());
+        //45
         System.out.println(InfiniteListGrader.iterate(0, x -> x + 1).filter(x -> x > 10).limit(4).count());
         System.out.println(Arrays.asList(InfiniteListGrader.iterate(0, x -> x + 1).filter(x -> x > 10).limit(4).toArray()));
         System.out.println(Arrays.asList(InfiniteListGrader.iterate(0, x -> x + 1).filter(x -> x % 10 == 1).limit(4).toArray()));
