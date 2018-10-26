@@ -1,26 +1,22 @@
 package cs2030.mystream;
 
 import java.util.Optional;
-import java.util.function.*;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 public interface InfiniteList<T> {
 
     static <T> InfiniteList<T> generate(Supplier<? extends T> supplier) {
-        return new MyInfiniteList<>(supplier::get, () -> InfiniteList.generate(supplier));
+        return MyInfiniteList.generate(supplier);
     }
 
     static <T> InfiniteList<T> iterate(T seed, UnaryOperator<T> next) {
-        return new MyInfiniteList<>(() -> seed, () -> InfiniteList.iterate(next.apply(seed), next));
+        return MyInfiniteList.iterate(seed, next);
     }
-    boolean isEmpty();
-
-    T getHead();
-
-    InfiniteList<T> getTail();
-
-    public Supplier<T> getHeadSupplier();
-
-    public Supplier<InfiniteList<T>> getTailSupplier();
 
     long count();
 
